@@ -27,6 +27,48 @@ def getUniqueElementValueFromXmlString(xmlString, elementName):
             '<' + elementName + '>', '').replace('</' + elementName + '>', '')
     return elementValue
 
+# pylint: disable=invalid-name
+def getUniqueElementValueFromXmlElement(xmlStringAsDom, elementName):
+    """
+    Extracts an element value from an XML string.
+
+    For example, invoking
+    getUniqueElementValueFromXmlString(
+        '<?xml version="1.0" encoding="UTF-8"?><foo>bar</foo>', 'foo')
+    should return the value 'bar'.
+    """
+    elementsByName = xmlStringAsDom.getElementsByTagName(elementName)
+    elementValue = None
+    if len(elementsByName) > 0:
+        elementValue = elementsByName[0].toxml().replace(
+            '<' + elementName + '>', '').replace('</' + elementName + '>', '')
+    return elementValue
+
+def getElementValuesFromXmlString(xmlString, elementName):
+    """
+    Extracts elements values from an XML string.
+
+    For example, invoking
+    getUniqueElementValueFromXmlString(
+        '<?xml version="1.0" encoding="UTF-8"?><foo>bar</foo>', 'foo')
+    should return the value 'bar'.
+    """
+    xmlStringAsDom = xml.dom.minidom.parseString(xmlString)
+    elementsByName = xmlStringAsDom.getElementsByTagName(elementName)
+    elementValues = None
+    if len(elementsByName) > 0:
+        elementValues = list(map(lambda x: x.toxml().replace(
+            '<' + elementName + '>', '').replace('</' + elementName + '>', ''), elementsByName))
+    return elementValues
+
+def getElementsFromXmlString(xmlString, elementName):
+    """
+    Extracts elements from an XML string.
+    """
+    xmlStringAsDom = xml.dom.minidom.parseString(xmlString)
+    elementsByName = xmlStringAsDom.getElementsByTagName(elementName)
+    return elementsByName
+
 
 def date_to_iso8601(date):
     """Returns an ISO8601 string from a date"""
@@ -61,7 +103,7 @@ def exception_handler(result, name=""):
     raise exc_cls(result.url, result.status_code, name, response_content)
 
 
-def call_salesforce(url, method, session, headers, **kwargs):
+def call_salesforce(url, method, session, headers, is_stream=False, **kwargs):
     """Utility method for performing HTTP call to Salesforce.
 
     Returns a `requests.result` object.
@@ -69,7 +111,7 @@ def call_salesforce(url, method, session, headers, **kwargs):
 
     additional_headers = kwargs.pop('additional_headers', dict())
     headers.update(additional_headers or dict())
-    result = session.request(method, url, headers=headers, **kwargs)
+    result = session.request(method, url, headers=headers, stream=is_stream, **kwargs)
 
     if result.status_code >= 300:
         exception_handler(result)
